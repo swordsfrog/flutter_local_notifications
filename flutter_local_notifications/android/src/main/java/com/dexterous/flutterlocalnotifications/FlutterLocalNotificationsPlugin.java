@@ -35,6 +35,7 @@ import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
+import android.widget.RemoteViews;
 
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
@@ -67,6 +68,7 @@ import com.dexterous.flutterlocalnotifications.models.ScheduledNotificationRepea
 import com.dexterous.flutterlocalnotifications.models.SoundSource;
 import com.dexterous.flutterlocalnotifications.models.styles.BigPictureStyleInformation;
 import com.dexterous.flutterlocalnotifications.models.styles.BigTextStyleInformation;
+import com.dexterous.flutterlocalnotifications.models.styles.CustomStyleInformation;
 import com.dexterous.flutterlocalnotifications.models.styles.DefaultStyleInformation;
 import com.dexterous.flutterlocalnotifications.models.styles.InboxStyleInformation;
 import com.dexterous.flutterlocalnotifications.models.styles.MessagingStyleInformation;
@@ -131,6 +133,8 @@ public class FlutterLocalNotificationsPlugin
   private static final String DISPATCHER_HANDLE = "dispatcher_handle";
   private static final String CALLBACK_HANDLE = "callback_handle";
   private static final String DRAWABLE = "drawable";
+  private static final String LAYOUT = "layout";
+  private static final String ID = "id";
   private static final String DEFAULT_ICON = "defaultIcon";
   private static final String SELECT_NOTIFICATION = "SELECT_NOTIFICATION";
   private static final String SELECT_FOREGROUND_NOTIFICATION_ACTION =
@@ -496,7 +500,8 @@ public class FlutterLocalNotificationsPlugin
               .registerSubtype(BigTextStyleInformation.class)
               .registerSubtype(BigPictureStyleInformation.class)
               .registerSubtype(InboxStyleInformation.class)
-              .registerSubtype(MessagingStyleInformation.class);
+              .registerSubtype(MessagingStyleInformation.class)
+              .registerSubtype(CustomStyleInformation.class);
       GsonBuilder builder =
           new GsonBuilder()
               .registerTypeAdapter(ScheduleMode.class, new ScheduleMode.Deserializer())
@@ -824,6 +829,13 @@ public class FlutterLocalNotificationsPlugin
     return context.getResources().getIdentifier(name, DRAWABLE, context.getPackageName());
   }
 
+  private static int getLayoutResourceId(Context context, String name) {
+    return context.getResources().getIdentifier(name, LAYOUT, context.getPackageName());
+  }
+
+  private static int getViewResourceId(Context context, String name) {
+    return context.getResources().getIdentifier(name, ID, context.getPackageName());
+  }
   @SuppressWarnings("unchecked")
   private static byte[] castObjectToByteArray(Object data) {
     byte[] byteArray;
@@ -1018,6 +1030,9 @@ public class FlutterLocalNotificationsPlugin
       case Media:
         setMediaStyle(builder);
         break;
+      case Custom:
+        setCustomStyle(context, notificationDetails, builder);
+        break;
       default:
         break;
     }
@@ -1107,6 +1122,32 @@ public class FlutterLocalNotificationsPlugin
     builder.setStyle(mediaStyle);
   }
 
+  private static void setCustomStyle(
+          Context context,
+          NotificationDetails notificationDetails,
+          NotificationCompat.Builder builder) {
+    CustomStyleInformation customStyleInformation =
+            (CustomStyleInformation) notificationDetails.styleInformation;
+    int layoutResId = getLayoutResourceId(context, customStyleInformation.customContentView);
+    RemoteViews remoteViews = new RemoteViews(context.getPackageName(), layoutResId);
+
+    Map<String, String> viewTexts = customStyleInformation.viewTexts;
+    for (String view: viewTexts.keySet()) {
+      int viewId = getViewResourceId(context, view);
+      remoteViews.setTextViewText(viewId, viewTexts.get(view));
+    }
+
+    androidx.core.app.NotificationCompat.DecoratedCustomViewStyle customViewStyle =
+            new androidx.core.app.NotificationCompat.DecoratedCustomViewStyle();
+
+    builder
+            .setStyle(customViewStyle)
+            .setContentTitle(null)
+            .setContentText(null)
+            .setContent(remoteViews)
+            .setCustomContentView(remoteViews)
+            .setCustomHeadsUpContentView(remoteViews);
+  }
   private static void setMessagingStyle(
       Context context,
       NotificationDetails notificationDetails,

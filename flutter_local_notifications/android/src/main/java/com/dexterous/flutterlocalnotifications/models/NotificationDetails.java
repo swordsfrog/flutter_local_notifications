@@ -9,6 +9,7 @@ import androidx.annotation.Nullable;
 
 import com.dexterous.flutterlocalnotifications.models.styles.BigPictureStyleInformation;
 import com.dexterous.flutterlocalnotifications.models.styles.BigTextStyleInformation;
+import com.dexterous.flutterlocalnotifications.models.styles.CustomStyleInformation;
 import com.dexterous.flutterlocalnotifications.models.styles.DefaultStyleInformation;
 import com.dexterous.flutterlocalnotifications.models.styles.InboxStyleInformation;
 import com.dexterous.flutterlocalnotifications.models.styles.MessagingStyleInformation;
@@ -128,6 +129,10 @@ public class NotificationDetails implements Serializable {
   private static final String COLORIZED = "colorized";
   private static final String NUMBER = "number";
   private static final String AUDIO_ATTRIBUTES_USAGE = "audioAttributesUsage";
+
+  private static final String CUSTOM_CONTENT_VIEW = "customContentView";
+  private static final String CUSTOM_BIG_CONTENT_VIEW = "customBigContentView";
+  private static final String VIEW_TEXTS = "viewTexts";
 
   public Integer id;
   public String title;
@@ -422,6 +427,8 @@ public class NotificationDetails implements Serializable {
       readMessagingStyleInformation(notificationDetails, styleInformation, defaultStyleInformation);
     } else if (notificationDetails.style == NotificationStyle.Media) {
       notificationDetails.styleInformation = defaultStyleInformation;
+    } else if (notificationDetails.style == NotificationStyle.Custom) {
+      readCustomStyleInformation(notificationDetails, styleInformation, defaultStyleInformation);
     }
   }
 
@@ -443,6 +450,19 @@ public class NotificationDetails implements Serializable {
             messages,
             defaultStyleInformation.htmlFormatTitle,
             defaultStyleInformation.htmlFormatBody);
+  }
+
+  @SuppressWarnings("unchecked")
+  private static void readCustomStyleInformation(
+          NotificationDetails notificationDetails,
+          Map<String, Object> styleInformation,
+          DefaultStyleInformation defaultStyleInformation) {
+    String customContentViewLayout = (String) styleInformation.get(CUSTOM_CONTENT_VIEW);
+    String customBigContentViewLayout = (String) styleInformation.get(CUSTOM_BIG_CONTENT_VIEW);
+    Map<String, String> viewTexts = (Map<String, String>) styleInformation.get(VIEW_TEXTS);
+
+    notificationDetails.styleInformation =
+            new CustomStyleInformation(customContentViewLayout, customBigContentViewLayout, viewTexts);
   }
 
   private static PersonDetails readPersonDetails(Map<String, Object> person) {

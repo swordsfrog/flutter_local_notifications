@@ -8,6 +8,7 @@ import 'notification_sound.dart';
 import 'person.dart';
 import 'styles/big_picture_style_information.dart';
 import 'styles/big_text_style_information.dart';
+import 'styles/custom_style_information.dart';
 import 'styles/default_style_information.dart';
 import 'styles/inbox_style_information.dart';
 import 'styles/media_style_information.dart';
@@ -148,6 +149,15 @@ extension BigTexStyleInformationMapper on BigTextStyleInformation {
     });
 }
 
+extension CustomStyleInformationMapper on CustomStyleInformation {
+  Map<String, Object?> toMap() => _convertDefaultStyleInformationToMap(this)
+    ..addAll(<String, Object?>{
+      'customContentView': customContentView,
+      'customBigContentView': customBigContentView,
+      'viewTexts': viewTexts,
+    });
+}
+
 extension InboxStyleInformationMapper on InboxStyleInformation {
   Map<String, Object?> toMap() => _convertDefaultStyleInformationToMap(this)
     ..addAll(<String, Object?>{
@@ -260,6 +270,12 @@ extension AndroidNotificationDetailsMapper on AndroidNotificationDetails {
         'style': AndroidNotificationStyle.media.index,
         'styleInformation':
             (styleInformation as MediaStyleInformation?)?.toMap(),
+      };
+    } else if (styleInformation is CustomStyleInformation) {
+      return <String, Object?>{
+        'style': AndroidNotificationStyle.custom.index,
+        'styleInformation':
+        (styleInformation as CustomStyleInformation?)?.toMap(),
       };
     } else if (styleInformation is DefaultStyleInformation) {
       return <String, Object?>{
